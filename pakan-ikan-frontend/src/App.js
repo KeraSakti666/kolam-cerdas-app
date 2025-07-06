@@ -1,10 +1,8 @@
 // src/App.js
-// Komponen utama aplikasi yang mengelola state, autentikasi, dan tampilan.
 
 import React, { useState, useEffect } from 'react';
-import './App.css'; // Pastikan Anda memiliki file CSS ini
+import './App.css';
 
-// --- Impor dari Firebase ---
 import { auth, firestore } from './firebaseConfig';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
@@ -17,17 +15,14 @@ import {
   orderBy,
 } from 'firebase/firestore';
 
-// --- Impor Komponen Lokal ---
 import AuthForm from './AuthForm';
 
-// --- Komponen UI Kecil ---
 const RelayStatus = ({ label, isActive }) => (
   <div className={`relay-status ${isActive ? 'active' : ''}`}>
     {label}: <strong>{isActive ? 'ON' : 'OFF'}</strong>
   </div>
 );
 
-// --- Komponen Utama Aplikasi ---
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +35,8 @@ function App() {
   const [pondSettings, setPondSettings] = useState(null);
   const [latestReading, setLatestReading] = useState(null);
 
-  const backendUrl = 'https://kolam-cerdas-app.onrender.com/'; 
+  // Pastikan URL backend Anda yang benar dimasukkan di sini
+  const backendUrl = 'https://kolam-cerdas-app.onrender.com'; 
 
   const feedDurations = {
     bibit: '15 detik',
@@ -109,12 +105,16 @@ function App() {
 
   const handleLogout = () => signOut(auth);
 
+  // --- FUNGSI API CALL YANG DIPERBARUI ---
   const handleApiCall = async (endpoint, method, body) => {
     if (!currentUser) return;
     setMessage('');
     const token = await currentUser.getIdToken();
     try {
-      const response = await fetch(`${backendUrl}${endpoint}`, {
+      // Logika baru untuk menggabungkan URL dengan aman
+      const fullUrl = new URL(endpoint, backendUrl).href;
+
+      const response = await fetch(fullUrl, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(body)
