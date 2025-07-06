@@ -29,27 +29,18 @@ const RelayStatus = ({ label, isActive }) => (
 
 // --- Komponen Utama Aplikasi ---
 function App() {
-  // State untuk Autentikasi dan UI
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showRegister, setShowRegister] = useState(false);
   const [message, setMessage] = useState('');
 
-  // State untuk Manajemen Kolam
   const [ponds, setPonds] = useState([]);
   const [selectedPondId, setSelectedPondId] = useState('');
 
-  // State untuk Data Real-time
   const [pondSettings, setPondSettings] = useState(null);
   const [latestReading, setLatestReading] = useState(null);
 
-  // --- State untuk Fitur WhatsApp ---
-  const [userWhatsapp, setUserWhatsapp] = useState('');
-  const [isWhatsappLoading, setIsWhatsappLoading] = useState(false);
-
-  // --- PERUBAHAN DI SINI ---
-  // Gunakan string kosong untuk backendUrl sesuai panduan rewrite
-  const backendUrl = '';
+  const backendUrl = ''; // Gunakan path relatif untuk rewrite rule
 
   const feedDurations = {
     bibit: '15 detik',
@@ -57,7 +48,6 @@ function App() {
     dewasa: '60 detik'
   };
 
-  // Efek untuk memantau status autentikasi
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -67,25 +57,11 @@ function App() {
         setSelectedPondId('');
         setPondSettings(null);
         setLatestReading(null);
-        setUserWhatsapp('');
       }
     });
     return () => unsubscribe();
   }, []);
 
-  // Efek untuk mengambil data pengguna (termasuk nomor WA)
-  useEffect(() => {
-    if (!currentUser) return;
-    const userDocRef = doc(firestore, 'users', currentUser.uid);
-    const unsubscribe = onSnapshot(userDocRef, (doc) => {
-      if (doc.exists() && doc.data().nomor_wa) {
-        setUserWhatsapp(doc.data().nomor_wa);
-      }
-    });
-    return () => unsubscribe();
-  }, [currentUser]);
-
-  // Efek untuk mengambil daftar kolam
   useEffect(() => {
     if (!currentUser) return;
     const q = query(collection(firestore, 'ponds'), where('id_pengguna', '==', currentUser.uid));
@@ -101,7 +77,6 @@ function App() {
     return () => unsubscribe();
   }, [currentUser, selectedPondId]);
 
-  // Efek untuk memantau data kolam yang dipilih
   useEffect(() => {
     if (!selectedPondId) {
       setPondSettings(null);
@@ -132,14 +107,11 @@ function App() {
     };
   }, [selectedPondId]);
 
-  // Handler fungsi
   const handleLogout = () => signOut(auth);
 
-  // --- FUNGSI API CALL YANG DIPERBARUI ---
-  const handleApiCall = async (endpoint, method, body, setLoadingState) => {
+  const handleApiCall = async (endpoint, method, body) => {
     if (!currentUser) return;
     setMessage('');
-    if (setLoadingState) setLoadingState(true);
     const token = await currentUser.getIdToken();
     try {
       const response = await fetch(`${backendUrl}${endpoint}`, {
@@ -147,24 +119,14 @@ function App() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(body)
       });
-
-      // Periksa dulu apakah responsnya OK (status 200-299)
       if (!response.ok) {
-        // Jika tidak OK, coba baca respons sebagai teks biasa
         const errorText = await response.text();
-        // Tampilkan pesan error dari server, atau status error jika kosong
         throw new Error(errorText || `Server Error: ${response.status}`);
       }
-
-      // Jika respons OK, baru baca sebagai JSON
       const data = await response.json();
       setMessage(`✅ ${data.message}`);
-
     } catch (error) {
-      // Tampilkan pesan error yang lebih informatif
       setMessage(`❌ Error: ${error.message}`);
-    } finally {
-      if (setLoadingState) setLoadingState(false);
     }
   };
   
@@ -192,14 +154,6 @@ function App() {
     }
   };
 
-  const handleSetWhatsapp = () => {
-    const nomor_wa = prompt('Masukkan nomor WhatsApp Anda (format: 628...):', userWhatsapp);
-    if (nomor_wa) {
-      handleApiCall('/api/user/whatsapp', 'POST', { nomor_wa }, setIsWhatsappLoading);
-    }
-  };
-
-  // Render logic
   if (loading) return <div className="loading-screen">Memuat Aplikasi...</div>;
   if (!currentUser) return <AuthForm isRegister={showRegister} onAuthSuccess={setCurrentUser} onToggleForm={() => setShowRegister(!showRegister)} />;
 
@@ -257,16 +211,6 @@ function App() {
                         Set ke {tahap}
                       </button>
                     ))}
-                  </div>
-                </div>
-                
-                <div className="settings-section">
-                  <h2>Notifikasi WhatsApp</h2>
-                  <p>Notifikasi otomatis akan dikirim ke: <strong>{userWhatsapp || 'Belum diatur'}</strong></p>
-                  <div className="button-container" style={{ marginTop: '10px' }}>
-                    <button onClick={handleSetWhatsapp} disabled={isWhatsappLoading}>
-                      {isWhatsappLoading ? 'Menyimpan...' : 'Ubah Nomor WhatsApp'}
-                    </button>
                   </div>
                 </div>
               </>

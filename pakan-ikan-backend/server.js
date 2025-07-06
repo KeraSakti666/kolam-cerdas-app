@@ -9,7 +9,6 @@ const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
 const admin = require('firebase-admin');
-const { sendMessage } = require('./whatsappNotifier.js'); // Pastikan file ini ada
 
 // --- Inisialisasi Firebase Admin SDK ---
 const serviceAccount = require('./serviceAccountKey.json');
@@ -99,48 +98,6 @@ wss.on('connection', (ws) => {
             suhu, ph, kekeruhan: turbidity, ...relays,
             timestamp: new Date()
           }).catch(err => console.error("Error saving to Firestore:", err));
-        }
-      }
-
-      // --- LOGIKA BARU: Notifikasi Pakan Otomatis dengan Riwayat Sensor ---
-      else if (data.type === 'feed_notification' && data.id_perangkat_esp32) {
-        console.log(`Menerima notifikasi pakan dari ${data.id_perangkat_esp32}`);
-        
-        const pondsRef = firestore.collection('ponds');
-        const snapshot = await pondsRef.where('id_perangkat_esp32', '==', data.id_perangkat_esp32).limit(1).get();
-
-        if (!snapshot.empty) {
-          const pondDoc = snapshot.docs[0];
-          const pondData = pondDoc.data();
-          const userRef = firestore.collection('users').doc(pondData.id_pengguna);
-          const userDoc = await userRef.get();
-
-          if (userDoc.exists && userDoc.data().nomor_wa) {
-            const userData = userDoc.data();
-            
-            // 1. Ambil data sensor TERBARU
-            const readingsQuery = await firestore.collection('ponds').doc(pondDoc.id).collection('readings')
-                .orderBy('timestamp', 'desc')
-                .limit(1)
-                .get();
-
-            let sensorReport = "Data sensor saat ini tidak tersedia.";
-            if (!readingsQuery.empty) {
-                const latestReading = readingsQuery.docs[0].data();
-                sensorReport = `*Kondisi Air Saat Ini:*\n` +
-                               `   - Suhu: ${latestReading.suhu.toFixed(1)}°C\n` +
-                               `   - pH: ${latestReading.ph.toFixed(2)}\n` +
-                               `   - Kekeruhan: ${latestReading.kekeruhan.toFixed(1)} NTU`;
-            }
-
-            // 2. Buat pesan notifikasi yang lebih lengkap
-            const notifMessage = `🔔 *Notifikasi Pakan Otomatis*\n\n` +
-                                 `Servo pakan untuk kolam *${pondData.nama_kolam}* telah aktif untuk tahap *${pondData.pengaturan.tahap_aktif}*.\n\n` +
-                                 `${sensorReport}`;
-            
-            // 3. Kirim pesan
-            await sendMessage(userData.nomor_wa, notifMessage);
-          }
         }
       }
 
@@ -243,22 +200,6 @@ app.post('/api/ponds/:pondId/set-tahap', authenticateToken, async (req, res) => 
         }
     } catch (error) {
         res.status(500).json({ message: 'Terjadi kesalahan internal.' });
-    }
-});
-
-// Menyimpan nomor WhatsApp pengguna
-app.post('/api/user/whatsapp', authenticateToken, async (req, res) => {
-    const { nomor_wa } = req.body;
-    const userId = req.user.uid;
-    if (!nomor_wa || !/^[0-9]+$/.test(nomor_wa)) {
-        return res.status(400).json({ message: 'Format nomor WhatsApp tidak valid.' });
-    }
-    try {
-        const userRef = firestore.collection('users').doc(userId);
-        await userRef.set({ nomor_wa }, { merge: true });
-        res.status(200).json({ message: 'Nomor WhatsApp berhasil disimpan.' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error menyimpan nomor WA.' });
     }
 });
 
