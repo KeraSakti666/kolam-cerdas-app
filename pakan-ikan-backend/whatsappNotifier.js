@@ -2,20 +2,24 @@
 // Modul ini mengelola koneksi ke WhatsApp dan menyediakan fungsi untuk mengirim pesan.
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+// Kita tidak akan menggunakan qrcode-terminal lagi karena log di Render merusaknya.
+// const qrcode = require('qrcode-terminal'); 
 
 // Menggunakan LocalAuth untuk menyimpan sesi.
-// Anda hanya perlu scan QR code sekali, kecuali jika Anda logout.
 const client = new Client({
     authStrategy: new LocalAuth()
 });
 
 // Event ini akan berjalan saat QR code perlu di-scan.
 client.on('qr', qr => {
-    console.log('--------------------------------------------------');
-    console.log('WHATSAPP: Scan QR Code ini dengan aplikasi WhatsApp Anda:');
-    qrcode.generate(qr, { small: true });
-    console.log('--------------------------------------------------');
+    // --- PERUBAHAN DI SINI ---
+    // Daripada menampilkan gambar, kita akan mencetak data string QR code.
+    // Anda bisa menyalin string ini dan menggunakannya di generator QR code online.
+    console.log('--------------------------------------------------------------------');
+    console.log('WHATSAPP: Gagal menampilkan QR Code. Salin semua teks di bawah ini:');
+    console.log(qr); // Cetak data string mentah dari QR code
+    console.log('LALU: Buka situs seperti goqr.me, tempel teks di atas, lalu scan QR code yang muncul.');
+    console.log('--------------------------------------------------------------------');
 });
 
 // Event ini berjalan saat koneksi berhasil.
