@@ -1,9 +1,9 @@
 // server.js
 
-// Memuat variabel lingkungan dari file .env
+// Memuat variabel lingkungan
 require('dotenv').config();
 
-// Mengimpor modul yang diperlukan
+// Mengimpor modul
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -25,6 +25,11 @@ const port = 8080;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// --- Endpoint Tes Koneksi (Health Check) ---
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Backend is running' });
+});
 
 // Membuat server HTTP dan WebSocket
 const server = http.createServer(app);
@@ -57,7 +62,6 @@ wss.on('connection', (ws) => {
     try {
       const data = JSON.parse(message);
 
-      // Pendaftaran Perangkat
       if (data.type === 'register_device' && data.id_perangkat_esp32) {
         const { id_perangkat_esp32 } = data;
         const pondsRef = firestore.collection('ponds');
@@ -86,7 +90,6 @@ wss.on('connection', (ws) => {
         }
       }
       
-      // Update Status dari Perangkat
       else if (data.type === 'status_update') {
         const { id_perangkat_esp32, suhu, ph, turbidity, ...relays } = data;
         const pondsRef = firestore.collection('ponds');
@@ -119,8 +122,6 @@ wss.on('connection', (ws) => {
 });
 
 // --- API Routes ---
-
-// Mendapatkan daftar semua kolam milik pengguna
 app.get('/api/ponds', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
   try {
@@ -134,7 +135,6 @@ app.get('/api/ponds', authenticateToken, async (req, res) => {
   }
 });
 
-// Membuat kolam baru
 app.post('/api/ponds', authenticateToken, async (req, res) => {
     const { nama_kolam, id_perangkat_esp32 } = req.body;
     const id_pengguna = req.user.uid;
@@ -152,7 +152,6 @@ app.post('/api/ponds', authenticateToken, async (req, res) => {
     }
 });
 
-// Mengatur batas Suhu dan pH
 app.post('/api/ponds/:pondId/set-limits', authenticateToken, async (req, res) => {
   const { pondId } = req.params;
   const { minSuhu, maxSuhu, minPh, maxPh } = req.body;
@@ -179,7 +178,6 @@ app.post('/api/ponds/:pondId/set-limits', authenticateToken, async (req, res) =>
   }
 });
 
-// Mengatur Tahap Pakan
 app.post('/api/ponds/:pondId/set-tahap', authenticateToken, async (req, res) => {
     const { pondId } = req.params;
     const { tahap } = req.body;

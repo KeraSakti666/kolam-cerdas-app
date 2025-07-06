@@ -40,7 +40,7 @@ function App() {
   const [pondSettings, setPondSettings] = useState(null);
   const [latestReading, setLatestReading] = useState(null);
 
-  const backendUrl = ''; // Gunakan path relatif untuk rewrite rule
+  const backendUrl = 'https://kolam-cerdas-app.onrender.com/'; 
 
   const feedDurations = {
     bibit: '15 detik',
