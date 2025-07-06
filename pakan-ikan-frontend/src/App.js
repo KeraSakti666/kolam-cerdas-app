@@ -47,7 +47,9 @@ function App() {
   const [userWhatsapp, setUserWhatsapp] = useState('');
   const [isWhatsappLoading, setIsWhatsappLoading] = useState(false);
 
-  const backendUrl = ' ';
+  // --- PERUBAHAN DI SINI ---
+  // Gunakan string kosong untuk backendUrl sesuai panduan rewrite
+  const backendUrl = '';
 
   const feedDurations = {
     bibit: '15 detik',
@@ -133,6 +135,7 @@ function App() {
   // Handler fungsi
   const handleLogout = () => signOut(auth);
 
+  // --- FUNGSI API CALL YANG DIPERBARUI ---
   const handleApiCall = async (endpoint, method, body, setLoadingState) => {
     if (!currentUser) return;
     setMessage('');
@@ -144,10 +147,21 @@ function App() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(body)
       });
+
+      // Periksa dulu apakah responsnya OK (status 200-299)
+      if (!response.ok) {
+        // Jika tidak OK, coba baca respons sebagai teks biasa
+        const errorText = await response.text();
+        // Tampilkan pesan error dari server, atau status error jika kosong
+        throw new Error(errorText || `Server Error: ${response.status}`);
+      }
+
+      // Jika respons OK, baru baca sebagai JSON
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Terjadi kesalahan');
       setMessage(`✅ ${data.message}`);
+
     } catch (error) {
+      // Tampilkan pesan error yang lebih informatif
       setMessage(`❌ Error: ${error.message}`);
     } finally {
       if (setLoadingState) setLoadingState(false);
@@ -233,7 +247,9 @@ function App() {
                 <div className="button-container">
                   <h3>
                     Tahap Pakan Aktif: <strong>{pondSettings.tahap_aktif}</strong>
-                    
+                    <span style={{ fontWeight: 'normal', marginLeft: '8px', fontSize: '0.9rem' }}>
+                      (Durasi: {feedDurations[pondSettings.tahap_aktif]})
+                    </span>
                   </h3>
                   <div style={{ marginTop: '10px' }}>
                     {['bibit', 'remaja', 'dewasa'].map(tahap => (
@@ -244,7 +260,6 @@ function App() {
                   </div>
                 </div>
                 
-                {/* --- BAGIAN WHATSAPP YANG DISEDERHANAKAN --- */}
                 <div className="settings-section">
                   <h2>Notifikasi WhatsApp</h2>
                   <p>Notifikasi otomatis akan dikirim ke: <strong>{userWhatsapp || 'Belum diatur'}</strong></p>
