@@ -1,0 +1,551 @@
+/* src/App.css */
+
+.App {
+  text-align: center;
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  padding: 20px 20px 40px; /* Tambahkan padding horizontal */
+  box-sizing: border-box;
+}
+
+.App-header {
+  width: 100%;
+  max-width: 1200px; /* Tingkatkan lebar maksimum untuk konten */
+  padding: 0; /* Padding sudah diatur di .App */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px; /* Tingkatkan jarak antar bagian utama */
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+  flex-wrap: wrap; /* Tambahkan flex-wrap untuk responsif */
+  gap: 15px; /* Jarak antar item di header top */
+}
+
+.header-top h1 {
+  font-size: 2.5em; /* Ukuran font lebih besar untuk judul */
+  margin: 0; /* Hapus margin default */
+  flex-grow: 1; /* Biarkan judul mengambil ruang yang tersedia */
+  text-align: left; /* Rata kiri judul */
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.user-info p {
+    margin: 0;
+    font-size: 0.9em; /* Ukuran font info user */
+    color: #e0e0e0;
+}
+
+.logout-button, .add-pond-button {
+  background-color: #dc3545;
+  color: white;
+  padding: 10px 20px; /* Tingkatkan padding */
+  border: none;
+  border-radius: 8px; /* Tingkatkan border-radius */
+  cursor: pointer;
+  font-size: 0.95em;
+  transition: background-color 0.3s ease, transform 0.2s ease; /* Tambahkan transform */
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2); /* Tambahkan shadow */
+}
+
+.logout-button:hover, .add-pond-button:hover {
+  background-color: #c82333;
+  transform: translateY(-2px); /* Efek hover */
+}
+
+/* Styling untuk pemilihan kolam */
+.pond-selection {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Tingkatkan jarak */
+    margin-bottom: 40px; /* Tingkatkan jarak bawah */
+    background-color: #ffffff;
+    padding: 25px 30px; /* Tingkatkan padding */
+    border-radius: 12px; /* Tingkatkan border-radius */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); /* Tingkatkan shadow */
+    width: 100%;
+    max-width: 1000px; /* Sesuaikan lebar */
+    justify-content: center;
+    flex-wrap: wrap;
+    color: #333;
+}
+
+.pond-selection h2 {
+    margin: 0;
+    color: #333;
+    font-size: 1.3em;
+    font-weight: 600; /* Tebalkan font */
+}
+
+.pond-selector {
+    padding: 12px 18px; /* Tingkatkan padding */
+    border: 1px solid #ccc;
+    border-radius: 8px; /* Tingkatkan border-radius */
+    font-size: 1em;
+    min-width: 250px; /* Tingkatkan lebar minimum */
+    background-color: white;
+    cursor: pointer;
+    color: #333;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); /* Tambahkan shadow dalam */
+}
+
+.add-pond-button {
+    background-color: #007bff;
+}
+
+
+/* Styling untuk grid status dan relay */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Atur minwidth */
+  gap: 30px; /* Tingkatkan jarak antar grid item */
+  width: 100%;
+  max-width: 1000px; /* Sesuaikan dengan pond-selection */
+  margin-top: 20px; /* Jarak atas dari pond selection */
+  margin-bottom: 40px; /* Jarak bawah */
+}
+
+.status-card {
+  background-color: #3a3f47;
+  padding: 30px; /* Tingkatkan padding */
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px; /* Tingkatkan jarak antar elemen dalam kartu */
+  text-align: center;
+  position: relative; /* Untuk efek visual */
+  overflow: hidden; /* Pastikan tidak ada overflow dari pseudo-element */
+}
+
+.status-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px; /* Garis warna di atas kartu */
+  background: linear-gradient(90deg, #61dafb, #007bff); /* Warna gradien */
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+.status-card.temperature-display::before { background: linear-gradient(90deg, #ff6347, #ffa500); } /* Orange untuk suhu */
+.status-card.turbidity-display::before { background: linear-gradient(90deg, #a0d8b3, #4CAF50); } /* Hijau untuk turbidity */
+.status-card.ph-display::before { background: linear-gradient(90deg, #9370db, #8a2be2); } /* Ungu untuk pH (jika ada) */
+
+
+.status-card span {
+  font-size: 1em; /* Ukuran font lebih besar */
+  color: #b0b0b0;
+  font-weight: 500;
+}
+
+.status-card strong {
+  font-size: 3em; /* Ukuran font lebih besar */
+  color: #61dafb;
+  line-height: 1; /* Pastikan tinggi baris normal */
+}
+
+.relay-container {
+  background-color: #3a3f47;
+  padding: 30px; /* Tingkatkan padding */
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Jarak antar relay status */
+  text-align: center;
+  justify-content: center; /* Pusat konten secara vertikal */
+}
+
+.relay-container h3 {
+  margin: 0;
+  color: #e0e0e0;
+  font-size: 1.4em; /* Ukuran font lebih besar */
+  margin-bottom: 10px; /* Jarak ke item di bawahnya */
+  font-weight: 600;
+}
+
+.relay-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px; /* Tingkatkan padding */
+  border-radius: 8px;
+  background-color: #4a4f58;
+  color: #ccc;
+  font-size: 1em; /* Ukuran font lebih besar */
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.relay-status strong {
+  font-size: 1.2em; /* Ukuran font lebih besar */
+  color: #ff6347;
+}
+
+.relay-status.active {
+  background-color: #4CAF50;
+  transform: scale(1.02); /* Efek saat aktif */
+}
+
+.relay-status.active strong {
+  color: white;
+}
+
+/* Styling untuk form pengaturan batas */
+.settings-section {
+  background-color: #f8f8f8;
+  padding: 30px; /* Tingkatkan padding */
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  margin-top: 40px; /* Jarak atas */
+  width: 100%;
+  max-width: 800px;
+  box-sizing: border-box;
+  color: #333;
+}
+
+.settings-section h2 {
+  color: #333;
+  margin-bottom: 25px; /* Jarak bawah */
+  font-size: 1.8em; /* Ukuran font lebih besar */
+  font-weight: 700;
+}
+
+.limits-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Jarak antar baris input */
+}
+
+.input-row {
+  display: flex;
+  align-items: center; /* Pusat item vertikal */
+  gap: 20px; /* Jarak antar elemen dalam satu baris */
+  flex-wrap: wrap; /* Izinkan wrap pada layar kecil */
+  justify-content: center; /* Pusat konten saat wrap */
+}
+
+.input-row label {
+  flex: 0 0 auto; /* Label tidak akan menyusut/membesar */
+  width: 150px; /* Increased from 120px to give more space */
+  text-align: right;
+  padding-right: 15px; /* Jarak kanan label */
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+  font-size: 1.1em;
+}
+
+.input-row input {
+  flex: 1; /* Input akan mengambil sisa ruang */
+  min-width: 100px; /* Minimum width untuk input */
+  padding: 12px 15px; /* Tingkatkan padding */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1em;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-row input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
+.limits-form button {
+  background-color: #28a745;
+  color: white;
+  padding: 14px 25px; /* Tingkatkan padding */
+  border: none;
+  border-radius: 8px;
+  font-size: 1.2em; /* Ukuran font lebih besar */
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  margin-top: 25px; /* Jarak atas */
+  box-shadow: 0 4px 6px rgba(0,128,0,0.2);
+}
+
+.limits-form button:hover {
+  background-color: #218838;
+  transform: translateY(-2px);
+}
+
+.limits-form button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Styling untuk tombol tahap pakan */
+p {
+  margin-top: 30px; /* Jarak atas */
+  font-size: 1em;
+  color: #e0e0e0;
+}
+
+.button-container {
+  display: flex;
+  gap: 20px; /* Jarak antar tombol */
+  margin-top: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  max-width: 800px; /* Sesuaikan lebar */
+}
+
+.button-container button {
+  background-color: #007bff;
+  color: white;
+  padding: 14px 25px; /* Tingkatkan padding */
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em; /* Ukuran font lebih besar */
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  min-width: 150px; /* Tingkatkan lebar minimum */
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.button-container button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.button-container button.active {
+  background-color: #28a745;
+  box-shadow: 0 0 15px rgba(40, 167, 69, 0.7); /* Efek glow */
+  transform: translateY(-2px) scale(1.03); /* Sedikit lebih besar saat aktif */
+}
+
+.button-container button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Styling untuk pesan notifikasi (error/sukses) */
+.status-message {
+  margin-top: 30px; /* Jarak atas */
+  padding: 15px 25px; /* Tingkatkan padding */
+  border-radius: 8px;
+  font-size: 1em;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  max-width: 600px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+/* Media Queries untuk responsif */
+@media (max-width: 992px) {
+  .App-header {
+    gap: 25px;
+  }
+  .header-top h1 {
+    font-size: 2em;
+  }
+  .pond-selection {
+    gap: 15px;
+    padding: 20px;
+  }
+  .pond-selector {
+    min-width: 200px;
+  }
+  .status-grid {
+    gap: 20px;
+  }
+  .status-card, .relay-container, .settings-section {
+    padding: 25px;
+  }
+  .status-card strong {
+    font-size: 2.5em;
+  }
+  .relay-container h3 {
+    font-size: 1.2em;
+  }
+  .relay-status {
+    font-size: 0.9em;
+  }
+  .settings-section h2 {
+    font-size: 1.6em;
+  }
+  .input-row label {
+    width: 100px;
+    padding-right: 10px;
+    font-size: 1em;
+  }
+  .limits-form button, .button-container button {
+    padding: 12px 20px;
+    font-size: 1em;
+  }
+}
+
+@media (max-width: 768px) {
+  .App-header {
+    padding: 15px;
+    gap: 20px;
+  }
+
+  h1 {
+    font-size: 1.8em;
+    text-align: center; /* Pusatkan judul di mobile */
+    width: 100%;
+  }
+
+  .header-top {
+    flex-direction: column;
+    align-items: center; /* Pusatkan item di header top */
+    gap: 15px;
+  }
+  .user-info {
+      width: 100%;
+      justify-content: center; /* Pusatkan info user */
+  }
+
+  .pond-selection {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+    padding: 15px;
+  }
+  .pond-selection h2, .pond-selector, .add-pond-button {
+    width: 100%;
+    text-align: center;
+  }
+  .pond-selector {
+    min-width: unset; /* Hapus min-width */
+  }
+
+
+  .status-grid {
+    grid-template-columns: 1fr; /* Satu kolom pada layar kecil */
+    gap: 15px;
+    margin: 15px 0;
+  }
+
+  .status-card, .relay-container, .settings-section {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  .status-card strong {
+    font-size: 2em;
+  }
+
+  .relay-container h3 {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+  }
+
+  .relay-status {
+    font-size: 0.85em;
+    padding: 8px 12px;
+  }
+
+  .relay-status strong {
+    font-size: 1.05em;
+  }
+
+  .settings-section {
+    margin-top: 30px;
+    padding: 20px;
+  }
+
+  .settings-section h2 {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+  }
+
+  .limits-form {
+    gap: 15px;
+  }
+
+  .input-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .input-row label {
+    width: 100%; /* Make label take full width when stacked */
+    text-align: left; /* Align text to left when stacked */
+    padding-right: 0; /* Remove right padding when stacked */
+    margin-bottom: 5px; /* Add small margin below label when stacked */
+  }
+
+  .input-row input {
+    width: 100%; /* Ensure input takes full width */
+    padding: 10px;
+    font-size: 0.9em;
+  }
+
+  .limits-form button, .button-container button {
+    width: 100%;
+    padding: 12px;
+    font-size: 0.95em;
+  }
+
+  p {
+    margin-top: 20px;
+    font-size: 0.9em;
+  }
+
+  .button-container {
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .status-message {
+    margin-top: 20px;
+    padding: 12px 20px;
+    font-size: 0.85em;
+  }
+}
+/* Tambahkan ini ke dalam file Login.css atau App.css Anda */
+
+.input-group input {
+  width: 100%; /* Membuat input field memenuhi lebar container */
+  padding: 12px; /* Menambah ruang di dalam input field */
+  font-size: 1rem; /* Menyesuaikan ukuran font agar mudah dibaca */
+  box-sizing: border-box; /* Penting agar padding tidak menambah lebar total */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-top: 5px; /* Memberi sedikit jarak dari label di atasnya */
+}
+
+.login-box {
+  width: 100%;
+  max-width: 400px; /* Anda bisa sesuaikan lebar maksimum box login */
+  /* Pastikan box login memiliki padding yang cukup */
+  padding: 2rem; 
+}
+
+.input-group {
+    width: 100%;
+    margin-bottom: 1rem; /* Memberi jarak antar input group */
+}
