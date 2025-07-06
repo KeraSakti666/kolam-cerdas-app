@@ -47,7 +47,7 @@ function App() {
   const [userWhatsapp, setUserWhatsapp] = useState('');
   const [isWhatsappLoading, setIsWhatsappLoading] = useState(false);
 
-  const backendUrl = 'http://localhost:8080';
+  const backendUrl = 'https://kolam-cerdas-app.onrender.com/';
 
   const feedDurations = {
     bibit: '15 detik',
