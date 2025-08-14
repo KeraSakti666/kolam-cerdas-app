@@ -1,0 +1,16 @@
+{
+  "name": "pakan-ikan-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp bot service for Kolam Cerdas",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.23.0"
+  }
+}
