@@ -11,14 +11,14 @@
       "config": { "distDir": "pakan-ikan-frontend/build" }
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "pakan-ikan-backend/server.js"
+      "source": "/api/(.*)",
+      "destination": "/pakan-ikan-backend/server.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "pakan-ikan-frontend/$1"
+      "source": "/(.*)",
+      "destination": "/pakan-ikan-frontend/$1"
     }
   ],
   "headers": [
