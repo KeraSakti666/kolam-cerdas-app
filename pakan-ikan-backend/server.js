@@ -30,9 +30,17 @@ const firestore = admin.firestore();
 const app = express();
 
 // --- PERUBAHAN UTAMA DI SINI: Konfigurasi CORS ---
-// Kita secara eksplisit mengizinkan permintaan dari URL frontend kita.
+const frontendUrl = process.env.FRONTEND_URL;
+
+// Log ini akan membantu kita memastikan environment variable terbaca dengan benar di Vercel
+if (!frontendUrl) {
+    console.warn("PERINGATAN: FRONTEND_URL tidak diatur. CORS akan gagal di lingkungan produksi.");
+} else {
+    console.log(`Mengizinkan permintaan CORS dari origin: ${frontendUrl}`);
+}
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL // URL frontend akan kita simpan di env var
+  origin: frontendUrl
 };
 app.use(cors(corsOptions)); // Terapkan konfigurasi cors
 
