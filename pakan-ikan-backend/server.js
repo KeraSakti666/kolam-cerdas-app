@@ -2,7 +2,7 @@
 
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors'); // Kita akan gunakan library ini dengan konfigurasi lengkap
+const cors = require('cors'); 
 const admin = require('firebase-admin');
 const axios = require('axios');
 
@@ -29,7 +29,7 @@ const firestore = admin.firestore();
 const app = express();
 
 // --- PERUBAHAN UTAMA: Konfigurasi CORS Sesuai Panduan Vercel ---
-const frontendUrl = process.env.FRONTEND_URL;
+const frontendUrl = "https://kolam-cerdas-frontend.vercel.app";
 
 // Log ini akan membantu kita memastikan environment variable terbaca dengan benar di Vercel
 if (!frontendUrl) {
