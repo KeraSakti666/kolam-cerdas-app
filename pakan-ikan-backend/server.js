@@ -9,7 +9,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
 const admin = require('firebase-admin');
-const { sendMessage } = require('./whatsappNotifier.js'); // Pastikan file ini ada
+const { sendMessage } = require('./whatsappNotifier.js'); 
 
 // --- Inisialisasi Firebase Admin SDK ---
 const serviceAccount = require('./serviceAccountKey.json');
@@ -197,30 +197,34 @@ app.post('/api/ponds', authenticateToken, async (req, res) => {
 
 // Mengatur batas Suhu dan pH
 app.post('/api/ponds/:pondId/set-limits', authenticateToken, async (req, res) => {
-  const { pondId } = req.params;
-  const { minSuhu, maxSuhu, minPh, maxPh } = req.body;
-  const userId = req.user.uid;
-  try {
-    const pondRef = firestore.collection('ponds').doc(pondId);
-    const doc = await pondRef.get();
-    if (!doc.exists || doc.data().id_pengguna !== userId) {
-      return res.status(404).json({ message: 'Kolam tidak ditemukan.' });
-    }
-    await pondRef.update({
-      'pengaturan.min_suhu': parseFloat(minSuhu), 'pengaturan.maks_suhu': parseFloat(maxSuhu),
-      'pengaturan.min_ph': parseFloat(minPh), 'pengaturan.maks_ph': parseFloat(maxPh)
-    });
-    const esp32Socket = esp32Sockets.get(doc.data().id_perangkat_esp32);
-    if (esp32Socket && esp32Socket.readyState === WebSocket.OPEN) {
-      esp32Socket.send(JSON.stringify({ type: 'limit_update', minSuhu, maxSuhu, minPh, maxPh }));
-      res.status(200).json({ message: 'Batas berhasil diatur dan dikirim ke perangkat.' });
-    } else {
-      res.status(202).json({ message: 'Pengaturan disimpan, tapi perangkat sedang offline.' });
-    }
-  } catch (error) {
-    res.status(500).json({ message: 'Terjadi kesalahan internal.' });
-  }
-});
+  const { pondId } = req.params;
+  // Terima 'batasKekeruhan' dari body request
+  const { minSuhu, maxSuhu, minPh, maxPh, batasKekeruhan } = req.body; // <-- UBAH DI SINI
+  const userId = req.user.uid;
+  try {
+    const pondRef = firestore.collection('ponds').doc(pondId);
+    const doc = await pondRef.get();
+    if (!doc.exists || doc.data().id_pengguna !== userId) {
+      return res.status(404).json({ message: 'Kolam tidak ditemukan.' });
+    }
+    // Tambahkan 'batas_kekeruhan' ke data yang diupdate
+    await pondRef.update({
+      'pengaturan.min_suhu': parseFloat(minSuhu), 'pengaturan.maks_suhu': parseFloat(maxSuhu),
+      'pengaturan.min_ph': parseFloat(minPh), 'pengaturan.maks_ph': parseFloat(maxPh),
+      'pengaturan.batas_kekeruhan': parseFloat(batasKekeruhan) // <-- TAMBAHKAN INI
+    });
+    const esp32Socket = esp32Sockets.get(doc.data().id_perangkat_esp32);
+    if (esp32Socket && esp32Socket.readyState === WebSocket.OPEN) {
+      // Kirim juga 'batasKekeruhan' ke ESP32
+      esp32Socket.send(JSON.stringify({ type: 'limit_update', minSuhu, maxSuhu, minPh, maxPh, batasKekeruhan })); // <-- UBAH DI SINI
+      res.status(200).json({ message: 'Batas berhasil diatur dan dikirim ke perangkat.' });
+    } else {
+      res.status(202).json({ message: 'Pengaturan disimpan, tapi perangkat sedang offline.' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Terjadi kesalahan internal.' });
+  }
+})
 
 // Mengatur Tahap Pakan
 app.post('/api/ponds/:pondId/set-tahap', authenticateToken, async (req, res) => {
@@ -266,3 +270,4 @@ app.post('/api/user/whatsapp', authenticateToken, async (req, res) => {
 server.listen(port, () => {
   console.log(`🚀 Server berjalan di http://localhost:${port}`);
 });
+    

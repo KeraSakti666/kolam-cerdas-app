@@ -47,7 +47,7 @@ function App() {
   const [userWhatsapp, setUserWhatsapp] = useState('');
   const [isWhatsappLoading, setIsWhatsappLoading] = useState(false);
 
-  const backendUrl = 'https://kolam-cerdas-app.onrender.com';
+  const backendUrl = 'http://localhost:8080';
 
   const feedDurations = {
     bibit: '15 detik',
@@ -166,7 +166,8 @@ function App() {
       minSuhu: pondSettings.min_suhu,
       maxSuhu: pondSettings.maks_suhu,
       minPh: pondSettings.min_ph,
-      maxPh: pondSettings.maks_ph
+      maxPh: pondSettings.maks_ph,
+      batasKekeruhan: pondSettings.batas_kekeruhan || 500
     });
   };
 
@@ -218,7 +219,7 @@ function App() {
           <>
             <div className="status-grid">
               <div className="status-card"><span>Suhu</span><strong>{latestReading ? `${latestReading.suhu.toFixed(1)}°C` : '...'}</strong></div>
-              <div className="status-card"><span>pH</span><strong>{latestReading ? latestReading.ph.toFixed(2) : '...'}</strong></div>
+              <div className="status-card"><span>pH</span><strong>{latestReading ? (latestReading.ph).toFixed(2) : '...'}</strong></div>
               <div className="status-card"><span>Kekeruhan</span><strong>{latestReading ? `${latestReading.kekeruhan.toFixed(1)} NTU` : '...'}</strong></div>
               <div className="status-card relay-container"><h3>Kontrol Suhu</h3><RelayStatus label="Pendingin" isActive={latestReading?.relay1} /><RelayStatus label="Pemanas" isActive={latestReading?.relay2} /></div>
               <div className="status-card relay-container"><h3>Kontrol pH</h3><RelayStatus label="pH Up" isActive={latestReading?.relay3} /><RelayStatus label="pH Down" isActive={latestReading?.relay4} /></div>
@@ -230,8 +231,25 @@ function App() {
                 <div className="settings-section">
                   <h2>Pengaturan Batas Otomatis</h2>
                   <form onSubmit={handleSetLimits} className="limits-form">
-                    <div className="input-row"><label>Suhu Min/Max (°C):</label><input type="number" step="0.1" value={pondSettings.min_suhu} onChange={(e) => setPondSettings({...pondSettings, min_suhu: e.target.value})} /><input type="number" step="0.1" value={pondSettings.maks_suhu} onChange={(e) => setPondSettings({...pondSettings, maks_suhu: e.target.value})} /></div>
-                    <div className="input-row"><label>pH Min/Max:</label><input type="number" step="0.1" value={pondSettings.min_ph} onChange={(e) => setPondSettings({...pondSettings, min_ph: e.target.value})} /><input type="number" step="0.1" value={pondSettings.maks_ph} onChange={(e) => setPondSettings({...pondSettings, maks_ph: e.target.value})} /></div>
+                    <div className="input-row">
+                      <label>Suhu Min/Max (°C):</label>
+                      <input type="number" step="0.1" value={pondSettings.min_suhu} onChange={(e) => setPondSettings({...pondSettings, min_suhu: e.target.value})} />
+                      <input type="number" step="0.1" value={pondSettings.maks_suhu} onChange={(e) => setPondSettings({...pondSettings, maks_suhu: e.target.value})} />
+                    </div>
+                    <div className="input-row">
+                      <label>pH Min/Max:</label>
+                      <input type="number" step="0.1" value={pondSettings.min_ph} onChange={(e) => setPondSettings({...pondSettings, min_ph: e.target.value})} />
+                      <input type="number" step="0.1" value={pondSettings.maks_ph} onChange={(e) => setPondSettings({...pondSettings, maks_ph: e.target.value})} />
+                    </div>
+                    <div className="input-row">
+                      <label>Batas Kekeruhan (NTU):</label>
+                      <input 
+                        type="number" 
+                        step="1" 
+                        value={pondSettings.batas_kekeruhan || 500} 
+                        onChange={(e) => setPondSettings({...pondSettings, batas_kekeruhan: e.target.value})} 
+                      />
+                    </div>
                     <button type="submit">Simpan Pengaturan</button>
                   </form>
                 </div>

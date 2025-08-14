@@ -1,23 +1,11 @@
-// whatsappNotifier.js
-// Modul ini mengelola koneksi ke WhatsApp dan menyediakan fungsi untuk mengirim pesan.
-
 const { Client, LocalAuth } = require('whatsapp-web.js');
-// Kita tidak akan menggunakan qrcode-terminal lagi karena log di Render merusaknya.
-// const qrcode = require('qrcode-terminal'); 
-
-// Menggunakan LocalAuth untuk menyimpan sesi.
 const client = new Client({
     authStrategy: new LocalAuth()
 });
-
-// Event ini akan berjalan saat QR code perlu di-scan.
 client.on('qr', qr => {
-    // --- PERUBAHAN DI SINI ---
-    // Daripada menampilkan gambar, kita akan mencetak data string QR code.
-    // Anda bisa menyalin string ini dan menggunakannya di generator QR code online.
     console.log('--------------------------------------------------------------------');
     console.log('WHATSAPP: Gagal menampilkan QR Code. Salin semua teks di bawah ini:');
-    console.log(qr); // Cetak data string mentah dari QR code
+    console.log(qr); 
     console.log('LALU: Buka situs seperti goqr.me, tempel teks di atas, lalu scan QR code yang muncul.');
     console.log('--------------------------------------------------------------------');
 });
@@ -54,5 +42,4 @@ const sendMessage = async (number, message) => {
     }
 };
 
-// Ekspor fungsi agar bisa digunakan di file lain
 module.exports = { sendMessage };
