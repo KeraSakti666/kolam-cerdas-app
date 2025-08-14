@@ -1,13 +1,10 @@
-// pakan-ikan-backend/server.js (Versi Final untuk Vercel)
+// pakan-ikan-backend/server.js (Versi Final dengan Perbaikan CORS)
 
-// Memuat variabel lingkungan dari file .env (untuk pengembangan lokal)
 require('dotenv').config();
-
-// Mengimpor modul yang diperlukan
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // Kita akan mengkonfigurasi ini
 const admin = require('firebase-admin');
-const axios = require('axios'); // Menggunakan axios untuk komunikasi HTTP
+const axios = require('axios');
 
 // --- Inisialisasi Firebase Admin SDK ---
 try {
@@ -25,16 +22,21 @@ try {
     console.log('Firebase Admin SDK berhasil terhubung.');
 } catch (error) {
     console.error("Gagal menginisialisasi Firebase Admin SDK:", error.message);
-    process.exit(1); // Hentikan aplikasi jika Firebase gagal terhubung
+    process.exit(1);
 }
 const firestore = admin.firestore();
 
-
 // --- Inisialisasi Aplikasi Express ---
 const app = express();
-app.use(cors());
-app.use(express.json());
 
+// --- PERUBAHAN UTAMA DI SINI: Konfigurasi CORS ---
+// Kita secara eksplisit mengizinkan permintaan dari URL frontend kita.
+const corsOptions = {
+  origin: process.env.FRONTEND_URL // URL frontend akan kita simpan di env var
+};
+app.use(cors(corsOptions)); // Terapkan konfigurasi cors
+
+app.use(express.json());
 
 // --- Middleware Autentikasi Firebase ---
 const authenticateToken = async (req, res, next) => {
@@ -54,17 +56,12 @@ const authenticateToken = async (req, res, next) => {
 
 // --- Fungsi Helper untuk Mengirim Perintah ke Bot WhatsApp di Render ---
 const sendToWhatsAppBot = async (number, message) => {
-    // URL ini akan kita dapatkan setelah mendeploy bot ke Render
-    // dan kita simpan di Environment Variable Vercel
     const botUrl = process.env.WHATSAPP_BOT_URL; 
-
     if (!botUrl) {
-        console.error("URL Bot WhatsApp (WHATSAPP_BOT_URL) tidak diatur di Environment Variables!");
-        return; // Hentikan fungsi jika URL tidak ada
+        console.error("URL Bot WhatsApp (WHATSAPP_BOT_URL) tidak diatur!");
+        return;
     }
-
     try {
-        // Kirim permintaan POST ke endpoint /send-message di server bot kita
         await axios.post(`${botUrl}/send-message`, { number, message });
         console.log(`Perintah kirim pesan ke ${number} berhasil dikirim ke bot.`);
     } catch (error) {
@@ -72,12 +69,10 @@ const sendToWhatsAppBot = async (number, message) => {
     }
 };
 
-
 // ====================================================================
-// --- API Routes ---
+// --- API Routes --- (Tidak ada perubahan pada logika di dalam route)
 // ====================================================================
 
-// Mendapatkan daftar semua kolam milik pengguna
 app.get('/api/ponds', authenticateToken, async (req, res) => {
   const userId = req.user.uid;
   try {
@@ -91,7 +86,6 @@ app.get('/api/ponds', authenticateToken, async (req, res) => {
   }
 });
 
-// Membuat kolam baru
 app.post('/api/ponds', authenticateToken, async (req, res) => {
     const { nama_kolam, id_perangkat_esp32 } = req.body;
     const id_pengguna = req.user.uid;
@@ -109,8 +103,6 @@ app.post('/api/ponds', authenticateToken, async (req, res) => {
     }
 });
 
-// Mengatur batas Suhu, pH, dan Kekeruhan
-// CATATAN: Pengiriman real-time ke ESP32 dihapus karena WebSocket sudah dipindah.
 app.post('/api/ponds/:pondId/set-limits', authenticateToken, async (req, res) => {
   const { pondId } = req.params;
   const { minSuhu, maxSuhu, minPh, maxPh, batasKekeruhan } = req.body;
@@ -126,15 +118,12 @@ app.post('/api/ponds/:pondId/set-limits', authenticateToken, async (req, res) =>
       'pengaturan.min_ph': parseFloat(minPh), 'pengaturan.maks_ph': parseFloat(maxPh),
       'pengaturan.batas_kekeruhan': parseFloat(batasKekeruhan)
     });
-    // Logika WebSocket dihapus dari sini
     res.status(200).json({ message: 'Pengaturan berhasil disimpan di database.' });
   } catch (error) {
     res.status(500).json({ message: 'Terjadi kesalahan internal.' });
   }
 });
 
-// Mengatur Tahap Pakan
-// CATATAN: Pengiriman real-time ke ESP32 dihapus.
 app.post('/api/ponds/:pondId/set-tahap', authenticateToken, async (req, res) => {
     const { pondId } = req.params;
     const { tahap } = req.body;
@@ -146,14 +135,12 @@ app.post('/api/ponds/:pondId/set-tahap', authenticateToken, async (req, res) => 
             return res.status(404).json({ message: 'Kolam tidak ditemukan.' });
         }
         await pondRef.update({ 'pengaturan.tahap_aktif': tahap });
-        // Logika WebSocket dihapus dari sini
         res.status(200).json({ message: `Pengaturan tahap berhasil disimpan ke '${tahap}'.` });
     } catch (error) {
         res.status(500).json({ message: 'Terjadi kesalahan internal.' });
     }
 });
 
-// Menyimpan nomor WhatsApp pengguna
 app.post('/api/user/whatsapp', authenticateToken, async (req, res) => {
     const { nomor_wa } = req.body;
     const userId = req.user.uid;
@@ -169,15 +156,7 @@ app.post('/api/user/whatsapp', authenticateToken, async (req, res) => {
     }
 });
 
-// --- Endpoint Baru untuk Menerima Notifikasi dari ESP32 ---
-// ESP32 akan mengirim data ke sini, lalu server ini akan meneruskannya ke bot WA
 app.post('/api/notify', async (req, res) => {
-    // Anda bisa menambahkan kunci rahasia di sini untuk keamanan
-    // const secretKey = req.headers['x-secret-key'];
-    // if (secretKey !== process.env.ESP32_SECRET_KEY) {
-    //     return res.status(401).send('Akses ditolak');
-    // }
-
     const { type, id_perangkat_esp32 } = req.body;
     if (!type || !id_perangkat_esp32) return res.status(400).send('Tipe notifikasi dan ID Perangkat diperlukan.');
 
@@ -203,9 +182,7 @@ app.post('/api/notify', async (req, res) => {
                 }
                 notifMessage = `🔔 *Notifikasi Pakan Otomatis*\n\nServo pakan untuk kolam *${pondData.nama_kolam}* telah aktif untuk tahap *${pondData.pengaturan.tahap_aktif}*.\n\n${sensorReport}`;
             } 
-            // Anda bisa menambahkan tipe notifikasi lain di sini, misal: 'water_change'
-            // else if (type === 'water_change_notification') { ... }
-
+            
             if (notifMessage) {
                 await sendToWhatsAppBot(userDoc.data().nomor_wa, notifMessage);
             }
