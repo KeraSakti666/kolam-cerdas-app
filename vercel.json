@@ -14,7 +14,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/pakan-ikan-backend/server.js"
+      "destination": "/server.js"
     }
   ]
 }
