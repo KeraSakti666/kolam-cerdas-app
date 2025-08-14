@@ -2,7 +2,7 @@
 
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors'); 
+// const cors = require('cors'); // Kita tidak akan menggunakan library ini lagi
 const admin = require('firebase-admin');
 const axios = require('axios');
 
@@ -28,26 +28,27 @@ const firestore = admin.firestore();
 // --- Inisialisasi Aplikasi Express ---
 const app = express();
 
-// --- PERUBAHAN UTAMA: Konfigurasi CORS Sesuai Panduan Vercel ---
-const frontendUrl = "https://kolam-cerdas-frontend.vercel.app";
+// --- PERUBAHAN UTAMA: Middleware CORS Manual ---
+// Kita akan mengatur header secara manual untuk kontrol penuh.
+app.use((req, res, next) => {
+  const origin = process.env.FRONTEND_URL;
+  
+  // Mengatur header yang dibutuhkan untuk CORS.
+  // Kita secara eksplisit mengatur origin dari environment variable.
+  res.setHeader('Access-Control-Allow-Origin', origin || '*'); 
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', true);
 
-// Log ini akan membantu kita memastikan environment variable terbaca dengan benar di Vercel
-if (!frontendUrl) {
-    console.warn("PERINGATAN: FRONTEND_URL tidak diatur. CORS akan gagal di lingkungan produksi.");
-} else {
-    console.log(`Mengizinkan permintaan CORS dari origin: ${frontendUrl}`);
-}
+  // Tangani "preflight request" (OPTIONS) dengan mengirim status OK.
+  // Ini adalah kunci untuk memperbaiki error terakhir Anda.
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204); // 204 No Content adalah respons standar untuk preflight
+  }
 
-const corsOptions = {
-  origin: frontendUrl,
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true, // Mengizinkan pengiriman cookies atau header otorisasi
-  optionsSuccessStatus: 204 // Merespons pre-flight request dengan status 204 No Content
-};
+  next(); // Lanjutkan ke route berikutnya jika bukan preflight
+});
 
-// Terapkan middleware cors dengan konfigurasi di atas.
-// Ini harus menjadi salah satu middleware pertama yang dijalankan.
-app.use(cors(corsOptions));
 
 app.use(express.json());
 
