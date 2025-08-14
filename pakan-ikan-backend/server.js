@@ -28,17 +28,7 @@ const firestore = admin.firestore();
 
 // --- Inisialisasi Aplikasi Express ---
 const app = express();
-
-// --- PERUBAHAN UTAMA DI SINI: Konfigurasi CORS yang Lebih Terbuka untuk Debugging ---
-
-// Untuk sementara, kita izinkan SEMUA origin untuk memastikan masalahnya bukan pada URL.
-// Ini adalah langkah debugging, bukan untuk produksi jangka panjang.
-app.use(cors({
-  origin: '*', // Mengizinkan permintaan dari mana saja
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  allowedHeaders: "Content-Type,Authorization"
-}));
-
+app.use(cors()); // Cukup seperti ini saja
 app.use(express.json());
 
 // --- Middleware Autentikasi Firebase ---
