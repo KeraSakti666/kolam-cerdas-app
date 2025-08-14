@@ -2,7 +2,7 @@
 
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
+// const cors = require('cors'); // Kita tidak akan menggunakan library ini lagi
 const admin = require('firebase-admin');
 const axios = require('axios');
 
@@ -28,19 +28,27 @@ const firestore = admin.firestore();
 // --- Inisialisasi Aplikasi Express ---
 const app = express();
 
-// --- PERUBAHAN UTAMA DI SINI: Konfigurasi CORS Final ---
-const corsOptions = {
-  origin: process.env.FRONTEND_URL, // Ambil URL frontend dari env var
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true,
-  optionsSuccessStatus: 204
-};
+// --- PERUBAHAN UTAMA: Middleware CORS Manual ---
+// Kita akan mengatur header secara manual untuk kontrol penuh.
+app.use((req, res, next) => {
+  const origin = process.env.FRONTEND_URL;
+  
+  // Mengatur header yang dibutuhkan untuk CORS.
+  // Kita secara eksplisit mengatur origin dari environment variable.
+  res.setHeader('Access-Control-Allow-Origin', origin || '*'); 
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', true);
 
-// Aktifkan pre-flight request untuk semua route
-app.options('*', cors(corsOptions));
+  // Tangani "preflight request" (OPTIONS) dengan mengirim status OK.
+  // Ini adalah kunci untuk memperbaiki error terakhir Anda.
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204); // 204 No Content adalah respons standar untuk preflight
+  }
 
-// Gunakan middleware cors untuk semua request lainnya
-app.use(cors(corsOptions));
+  next(); // Lanjutkan ke route berikutnya jika bukan preflight
+});
+
 
 app.use(express.json());
 
