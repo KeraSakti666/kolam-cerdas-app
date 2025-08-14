@@ -29,25 +29,15 @@ const firestore = admin.firestore();
 // --- Inisialisasi Aplikasi Express ---
 const app = express();
 
-// --- PERUBAHAN UTAMA DI SINI: Konfigurasi CORS yang Lebih Kuat ---
-const frontendUrl = process.env.FRONTEND_URL;
+// --- PERUBAHAN UTAMA DI SINI: Konfigurasi CORS yang Lebih Terbuka untuk Debugging ---
 
-if (!frontendUrl) {
-    console.warn("PERINGATAN: FRONTEND_URL tidak diatur. CORS akan gagal di lingkungan produksi.");
-} else {
-    console.log(`Mengizinkan permintaan CORS dari origin: ${frontendUrl}`);
-}
-
-// Konfigurasi CORS yang lebih eksplisit untuk menangani preflight request
-const corsOptions = {
-  origin: frontendUrl,
+// Untuk sementara, kita izinkan SEMUA origin untuk memastikan masalahnya bukan pada URL.
+// Ini adalah langkah debugging, bukan untuk produksi jangka panjang.
+app.use(cors({
+  origin: '*', // Mengizinkan permintaan dari mana saja
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true, // Izinkan cookies jika diperlukan
-  optionsSuccessStatus: 204 // Beberapa browser lama (IE11) bermasalah dengan 204
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Aktifkan pre-flight request untuk semua route
+  allowedHeaders: "Content-Type,Authorization"
+}));
 
 app.use(express.json());
 
