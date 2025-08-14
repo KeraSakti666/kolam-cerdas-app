@@ -2,18 +2,17 @@
 
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors'); // Kita akan mengkonfigurasi ini
+const cors = require('cors');
 const admin = require('firebase-admin');
 const axios = require('axios');
 
 // --- Inisialisasi Firebase Admin SDK ---
 try {
-    const serviceAccount_b64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
-    if (!serviceAccount_b64) {
-        throw new Error("Environment variable FIREBASE_SERVICE_ACCOUNT_BASE64 tidak ditemukan.");
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountString) {
+        throw new Error("Environment variable FIREBASE_SERVICE_ACCOUNT tidak ditemukan.");
     }
-    const serviceAccount_json_string = Buffer.from(serviceAccount_b64, 'base64').toString('utf-8');
-    const serviceAccount = JSON.parse(serviceAccount_json_string);
+    const serviceAccount = JSON.parse(serviceAccountString);
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
@@ -28,8 +27,23 @@ const firestore = admin.firestore();
 
 // --- Inisialisasi Aplikasi Express ---
 const app = express();
-app.use(cors()); // Cukup seperti ini saja
+
+// --- PERUBAHAN UTAMA DI SINI: Konfigurasi CORS Final ---
+const corsOptions = {
+  origin: process.env.FRONTEND_URL, // Ambil URL frontend dari env var
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
+// Aktifkan pre-flight request untuk semua route
+app.options('*', cors(corsOptions));
+
+// Gunakan middleware cors untuk semua request lainnya
+app.use(cors(corsOptions));
+
 app.use(express.json());
+
 
 // --- Middleware Autentikasi Firebase ---
 const authenticateToken = async (req, res, next) => {
