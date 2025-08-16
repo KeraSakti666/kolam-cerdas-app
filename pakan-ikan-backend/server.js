@@ -30,7 +30,7 @@ const firestore = admin.firestore();
 const app = express();
 
 const allowedOrigins = [
-  "https://kolam-cerdas-frontend.vercel.app", // tanpa slash
+  "https://kolam-cerdas-frontend.vercel.app", 
 ];
 
 app.use(cors({
