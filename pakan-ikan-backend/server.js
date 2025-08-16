@@ -29,16 +29,23 @@ const firestore = admin.firestore();
 // --- Inisialisasi Aplikasi Express ---
 const app = express();
 
-// --- PERUBAHAN UTAMA: Konfigurasi CORS Sesuai Panduan Vercel ---
-const corsOptions = {
-  origin: 'https://kolam-cerdas-frontend.vercel.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-};
+const allowedOrigins = [
+  "https://kolam-cerdas-frontend.vercel.app", // tanpa slash
+];
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.get('/', (req, res) => {
