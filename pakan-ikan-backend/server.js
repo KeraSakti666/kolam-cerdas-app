@@ -1,11 +1,12 @@
 // pakan-ikan-backend/server.js (Versi Final dengan Perbaikan CORS)
 
-require('dotenv').config();
+
 const express = require('express');
-const cors = require('cors'); // Kita akan gunakan library ini dengan konfigurasi lengkap
+const cors = require('cors'); 
 const admin = require('firebase-admin');
 const axios = require('axios');
 
+require('dotenv').config();
 // --- Inisialisasi Firebase Admin SDK ---
 try {
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -29,26 +30,20 @@ const firestore = admin.firestore();
 const app = express();
 
 // --- PERUBAHAN UTAMA: Konfigurasi CORS Sesuai Panduan Vercel ---
-const frontendUrl = process.env.FRONTEND_URL;
-
-if (!frontendUrl) {
-    console.warn("PERINGATAN: FRONTEND_URL tidak diatur. CORS akan gagal di lingkungan produksi.");
-} else {
-    console.log(`Mengizinkan permintaan CORS dari origin: ${frontendUrl}`);
-}
-
 const corsOptions = {
-  origin: frontendUrl,
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  origin: 'https://kolam-cerdas-frontend.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-  optionsSuccessStatus: 204
 };
 
-// Terapkan middleware cors dengan konfigurasi di atas.
 app.use(cors(corsOptions));
-
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.json({ message: 'Backend Kolam Cerdas berjalan dengan CORS aktif' });
+});
 
 // --- Middleware Autentikasi Firebase ---
 const authenticateToken = async (req, res, next) => {
