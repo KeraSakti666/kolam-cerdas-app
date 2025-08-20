@@ -37,6 +37,10 @@ const wss = new WebSocketServer({ server });
 
 const connectedDevices = new Map();
 
+// --- PERUBAHAN: Tambahkan mekanisme Cooldown ---
+const notificationCooldowns = new Map();
+const COOLDOWN_PERIOD_MS = 4 * 60 * 1000; // Cooldown 4 menit
+
 console.log('WebSocket server is starting...');
 
 // --- Fungsi untuk menyimpan data ke Firestore ---
@@ -75,6 +79,15 @@ async function triggerWhatsAppNotification(data) {
     const deviceId = data.id_perangkat_esp32;
     const botUrl = process.env.WHATSAPP_BOT_URL;
 
+    // --- PERUBAHAN: Cek Cooldown ---
+    const now = Date.now();
+    const lastNotificationTime = notificationCooldowns.get(deviceId);
+    if (lastNotificationTime && (now - lastNotificationTime < COOLDOWN_PERIOD_MS)) {
+        console.log(`Notifikasi untuk ${deviceId} dalam masa cooldown. Permintaan diabaikan.`);
+        return; // Hentikan fungsi jika masih dalam masa cooldown
+    }
+    // --- Selesai Cek Cooldown ---
+
     if (!botUrl) {
         return console.error("URL Bot WhatsApp (WHATSAPP_BOT_URL) tidak diatur di environment variables!");
     }
@@ -95,8 +108,6 @@ async function triggerWhatsAppNotification(data) {
         const userRef = firestore.collection('users').doc(pondData.id_pengguna);
         const userDoc = await userRef.get();
         
-        // --- PERBAIKAN DI SINI ---
-        // Mengubah userDoc.exists() menjadi userDoc.exists (tanpa tanda kurung)
         if (!userDoc.exists || !userDoc.data().nomor_wa) {
             return console.log(`Notifikasi gagal: Pengguna ${pondData.id_pengguna} tidak ditemukan atau tidak memiliki nomor WA.`);
         }
@@ -113,11 +124,15 @@ async function triggerWhatsAppNotification(data) {
         // 4. Buat pesan notifikasi
         const notifMessage = `🔔 *Notifikasi Pakan Otomatis*\n\nServo pakan untuk kolam *${pondData.nama_kolam}* telah aktif untuk tahap *${pondData.pengaturan.tahap_aktif}*.\n\n${sensorReport}`;
 
+        // --- PERUBAHAN: Atur timestamp cooldown SEBELUM mengirim ---
+        notificationCooldowns.set(deviceId, now);
+
         // 5. Kirim perintah ke bot
         await axios.post(`${botUrl}/send-message`, { number: userWhatsappNumber, message: notifMessage });
         console.log(`Perintah notifikasi untuk ${userWhatsappNumber} berhasil dikirim ke bot.`);
 
     } catch (error) {
+        // Meskipun gagal, cooldown tetap aktif untuk mencegah percobaan ulang yang cepat
         console.error(`Gagal memproses notifikasi untuk ${deviceId}: ${error.message}`);
     }
 }
