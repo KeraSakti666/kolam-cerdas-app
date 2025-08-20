@@ -72,7 +72,9 @@ async function saveDataToFirestore(data) {
     await readingsRef.add({
       suhu: data.suhu,
       ph: data.ph,
-      turbidity: data.turbidity,
+      // --- PERUBAHAN DI SINI ---
+      // Mengubah 'turbidity' menjadi 'kekeruhan' agar sesuai dengan frontend
+      kekeruhan: data.turbidity, 
       relay1: data.relay1,
       relay2: data.relay2,
       relay3: data.relay3,
