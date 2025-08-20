@@ -1,61 +1,120 @@
-// server.js untuk WebSocket di Render
+// server.js untuk WebSocket di Render (dengan koneksi Firestore)
 
 const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
+const admin = require('firebase-admin');
+
+// --- Inisialisasi Firebase Admin SDK ---
+try {
+  // Ambil kredensial dari environment variable
+  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!serviceAccountString) {
+    throw new Error("Environment variable FIREBASE_SERVICE_ACCOUNT tidak ditemukan.");
+  }
+  const serviceAccount = JSON.parse(serviceAccountString);
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+
+  console.log('Firebase Admin SDK berhasil terhubung.');
+} catch (error) {
+  console.error("Gagal menginisialisasi Firebase Admin SDK:", error.message);
+  // Jangan keluar dari proses, biarkan server tetap berjalan
+  // Mungkin hanya koneksi ke Firebase yang gagal
+}
+const firestore = admin.firestore();
+// --- Selesai Inisialisasi Firebase ---
+
 
 const PORT = process.env.PORT || 3000;
-
-// Buat aplikasi Express dasar untuk health check
 const app = express();
 app.get('/', (req, res) => {
-  res.send('WebSocket Server is running');
+  res.send('WebSocket Server with Firestore integration is running');
 });
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-// Objek untuk menyimpan koneksi perangkat yang aktif
-// Key: esp32DeviceId, Value: objek WebSocket
 const connectedDevices = new Map();
 
 console.log('WebSocket server is starting...');
 
+// --- Fungsi untuk menyimpan data ke Firestore ---
+async function saveDataToFirestore(data) {
+  if (!firestore) {
+    console.error("Firestore tidak terinisialisasi, data tidak dapat disimpan.");
+    return;
+  }
+  
+  const deviceId = data.id_perangkat_esp32;
+  if (!deviceId) {
+    console.error("Pesan tidak memiliki id_perangkat_esp32.");
+    return;
+  }
+
+  try {
+    // 1. Cari dokumen 'pond' berdasarkan id_perangkat_esp32
+    const pondsRef = firestore.collection('ponds');
+    const snapshot = await pondsRef.where('id_perangkat_esp32', '==', deviceId).limit(1).get();
+
+    if (snapshot.empty) {
+      console.log(`Tidak ada kolam yang terdaftar untuk perangkat ${deviceId}.`);
+      return;
+    }
+
+    const pondDoc = snapshot.docs[0];
+    const pondId = pondDoc.id;
+
+    // 2. Tambahkan data sensor baru ke subcollection 'readings'
+    const readingsRef = firestore.collection('ponds').doc(pondId).collection('readings');
+    await readingsRef.add({
+      suhu: data.suhu,
+      ph: data.ph,
+      turbidity: data.turbidity,
+      relay1: data.relay1,
+      relay2: data.relay2,
+      relay3: data.relay3,
+      relay4: data.relay4,
+      relay_kuras: data.relay_kuras,
+      relay_isi: data.relay_isi,
+      timestamp: admin.firestore.FieldValue.serverTimestamp() // Gunakan timestamp server
+    });
+
+    console.log(`Data dari ${deviceId} berhasil disimpan ke Firestore di kolam ${pondId}.`);
+
+  } catch (error) {
+    console.error(`Gagal menyimpan data untuk ${deviceId} ke Firestore:`, error);
+  }
+}
+
+
 wss.on('connection', (ws) => {
   console.log('Client connected');
-  let deviceId = null; // Variabel untuk menyimpan ID perangkat untuk koneksi ini
+  let deviceId = null;
 
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
       console.log('Received message: %s', message);
 
-      // Logika untuk menangani berbagai jenis pesan
       switch (data.type) {
-        // Saat perangkat pertama kali terhubung dan mendaftarkan dirinya
         case 'register_device':
           deviceId = data.id_perangkat_esp32;
           if (deviceId) {
             connectedDevices.set(deviceId, ws);
             console.log(`Device ${deviceId} registered and connected.`);
-            // Kirim konfirmasi atau konfigurasi awal jika perlu
-            // ws.send(JSON.stringify({ type: 'initial_config', ... }));
           }
           break;
 
-        // Saat perangkat mengirim pembaruan status rutin
         case 'status_update':
-          // Di sini Anda bisa memproses data sensor
-          // Misalnya, menyimpannya ke database, atau meneruskannya ke frontend
-          console.log(`Status update from ${data.id_perangkat_esp32}: Suhu=${data.suhu}, pH=${data.ph}`);
+          // PANGGIL FUNGSI UNTUK MENYIMPAN KE FIRESTORE
+          saveDataToFirestore(data);
           break;
         
-        // Saat perangkat memberi notifikasi pakan
         case 'feed_notification':
             console.log(`Feed notification received from ${data.id_perangkat_esp32}`);
-            // Di sini Anda bisa memicu logika notifikasi WhatsApp Anda
-            // (Meskipun notifikasi WA Anda sudah ada di server HTTP,
-            // Anda bisa memindahkannya ke sini atau memicunya dari sini)
             break;
 
         default:
@@ -67,7 +126,6 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    // Hapus perangkat dari daftar saat koneksi terputus
     if (deviceId) {
       connectedDevices.delete(deviceId);
       console.log(`Device ${deviceId} disconnected.`);
