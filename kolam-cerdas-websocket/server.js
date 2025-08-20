@@ -1,13 +1,13 @@
-// server.js untuk WebSocket di Render (dengan koneksi Firestore)
+// server.js untuk WebSocket di Render (dengan koneksi Firestore dan Notifikasi WA)
 
 const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const admin = require('firebase-admin');
+const axios = require('axios'); // <-- Tambahkan axios
 
 // --- Inisialisasi Firebase Admin SDK ---
 try {
-  // Ambil kredensial dari environment variable
   const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccountString) {
     throw new Error("Environment variable FIREBASE_SERVICE_ACCOUNT tidak ditemukan.");
@@ -21,8 +21,6 @@ try {
   console.log('Firebase Admin SDK berhasil terhubung.');
 } catch (error) {
   console.error("Gagal menginisialisasi Firebase Admin SDK:", error.message);
-  // Jangan keluar dari proses, biarkan server tetap berjalan
-  // Mungkin hanya koneksi ke Firebase yang gagal
 }
 const firestore = admin.firestore();
 // --- Selesai Inisialisasi Firebase ---
@@ -43,52 +41,82 @@ console.log('WebSocket server is starting...');
 
 // --- Fungsi untuk menyimpan data ke Firestore ---
 async function saveDataToFirestore(data) {
-  if (!firestore) {
-    console.error("Firestore tidak terinisialisasi, data tidak dapat disimpan.");
-    return;
-  }
-  
+  if (!firestore) return console.error("Firestore tidak terinisialisasi.");
   const deviceId = data.id_perangkat_esp32;
-  if (!deviceId) {
-    console.error("Pesan tidak memiliki id_perangkat_esp32.");
-    return;
-  }
+  if (!deviceId) return console.error("Pesan tidak memiliki id_perangkat_esp32.");
 
   try {
-    // 1. Cari dokumen 'pond' berdasarkan id_perangkat_esp32
     const pondsRef = firestore.collection('ponds');
     const snapshot = await pondsRef.where('id_perangkat_esp32', '==', deviceId).limit(1).get();
-
-    if (snapshot.empty) {
-      console.log(`Tidak ada kolam yang terdaftar untuk perangkat ${deviceId}.`);
-      return;
-    }
-
-    const pondDoc = snapshot.docs[0];
-    const pondId = pondDoc.id;
-
-    // 2. Tambahkan data sensor baru ke subcollection 'readings'
+    if (snapshot.empty) return console.log(`Tidak ada kolam untuk perangkat ${deviceId}.`);
+    
+    const pondId = snapshot.docs[0].id;
     const readingsRef = firestore.collection('ponds').doc(pondId).collection('readings');
     await readingsRef.add({
       suhu: data.suhu,
       ph: data.ph,
-      // --- PERUBAHAN DI SINI ---
-      // Mengubah 'turbidity' menjadi 'kekeruhan' agar sesuai dengan frontend
-      kekeruhan: data.turbidity, 
+      kekeruhan: data.turbidity,
       relay1: data.relay1,
       relay2: data.relay2,
       relay3: data.relay3,
       relay4: data.relay4,
       relay_kuras: data.relay_kuras,
       relay_isi: data.relay_isi,
-      timestamp: admin.firestore.FieldValue.serverTimestamp() // Gunakan timestamp server
+      timestamp: admin.firestore.FieldValue.serverTimestamp()
     });
-
-    console.log(`Data dari ${deviceId} berhasil disimpan ke Firestore di kolam ${pondId}.`);
-
+    console.log(`Data dari ${deviceId} berhasil disimpan ke Firestore.`);
   } catch (error) {
     console.error(`Gagal menyimpan data untuk ${deviceId} ke Firestore:`, error);
   }
+}
+
+// --- PERUBAHAN: Fungsi baru untuk memicu notifikasi WhatsApp ---
+async function triggerWhatsAppNotification(data) {
+    const deviceId = data.id_perangkat_esp32;
+    const botUrl = process.env.WHATSAPP_BOT_URL;
+
+    if (!botUrl) {
+        return console.error("URL Bot WhatsApp (WHATSAPP_BOT_URL) tidak diatur di environment variables!");
+    }
+    if (!firestore) {
+        return console.error("Firestore tidak terinisialisasi, notifikasi tidak dapat dikirim.");
+    }
+
+    try {
+        // 1. Cari data kolam
+        const pondsRef = firestore.collection('ponds');
+        const pondSnapshot = await pondsRef.where('id_perangkat_esp32', '==', deviceId).limit(1).get();
+        if (pondSnapshot.empty) return console.log(`Notifikasi gagal: Tidak ada kolam untuk perangkat ${deviceId}.`);
+        
+        const pondDoc = pondSnapshot.docs[0];
+        const pondData = pondDoc.data();
+
+        // 2. Cari data pengguna (nomor WA)
+        const userRef = firestore.collection('users').doc(pondData.id_pengguna);
+        const userDoc = await userRef.get();
+        if (!userDoc.exists() || !userDoc.data().nomor_wa) {
+            return console.log(`Notifikasi gagal: Pengguna ${pondData.id_pengguna} tidak memiliki nomor WA.`);
+        }
+        const userWhatsappNumber = userDoc.data().nomor_wa;
+
+        // 3. Ambil data sensor terakhir untuk laporan
+        const readingsQuery = await firestore.collection('ponds').doc(pondDoc.id).collection('readings').orderBy('timestamp', 'desc').limit(1).get();
+        let sensorReport = "Data sensor saat ini tidak tersedia.";
+        if (!readingsQuery.empty) {
+            const latestReading = readingsQuery.docs[0].data();
+            sensorReport = `*Kondisi Air Saat Ini:*\n - Suhu: ${latestReading.suhu.toFixed(1)}°C\n - pH: ${latestReading.ph.toFixed(2)}\n - Kekeruhan: ${latestReading.kekeruhan.toFixed(1)} NTU`;
+        }
+
+        // 4. Buat pesan notifikasi
+        const notifMessage = `🔔 *Notifikasi Pakan Otomatis*\n\nServo pakan untuk kolam *${pondData.nama_kolam}* telah aktif untuk tahap *${pondData.pengaturan.tahap_aktif}*.\n\n${sensorReport}`;
+
+        // 5. Kirim perintah ke bot
+        await axios.post(`${botUrl}/send-message`, { number: userWhatsappNumber, message: notifMessage });
+        console.log(`Perintah notifikasi untuk ${userWhatsappNumber} berhasil dikirim ke bot.`);
+
+    } catch (error) {
+        console.error(`Gagal memproses notifikasi untuk ${deviceId}: ${error.message}`);
+    }
 }
 
 
@@ -111,12 +139,13 @@ wss.on('connection', (ws) => {
           break;
 
         case 'status_update':
-          // PANGGIL FUNGSI UNTUK MENYIMPAN KE FIRESTORE
           saveDataToFirestore(data);
           break;
         
         case 'feed_notification':
-            console.log(`Feed notification received from ${data.id_perangkat_esp32}`);
+            // --- PERUBAHAN DI SINI ---
+            // Panggil fungsi untuk mengirim notifikasi WA
+            triggerWhatsAppNotification(data);
             break;
 
         default:
