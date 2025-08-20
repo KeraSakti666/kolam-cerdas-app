@@ -4,7 +4,7 @@ const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const admin = require('firebase-admin');
-const axios = require('axios'); // <-- Tambahkan axios
+const axios = require('axios');
 
 // --- Inisialisasi Firebase Admin SDK ---
 try {
@@ -70,7 +70,7 @@ async function saveDataToFirestore(data) {
   }
 }
 
-// --- PERUBAHAN: Fungsi baru untuk memicu notifikasi WhatsApp ---
+// --- Fungsi untuk memicu notifikasi WhatsApp ---
 async function triggerWhatsAppNotification(data) {
     const deviceId = data.id_perangkat_esp32;
     const botUrl = process.env.WHATSAPP_BOT_URL;
@@ -94,8 +94,11 @@ async function triggerWhatsAppNotification(data) {
         // 2. Cari data pengguna (nomor WA)
         const userRef = firestore.collection('users').doc(pondData.id_pengguna);
         const userDoc = await userRef.get();
-        if (!userDoc.exists() || !userDoc.data().nomor_wa) {
-            return console.log(`Notifikasi gagal: Pengguna ${pondData.id_pengguna} tidak memiliki nomor WA.`);
+        
+        // --- PERBAIKAN DI SINI ---
+        // Mengubah userDoc.exists() menjadi userDoc.exists (tanpa tanda kurung)
+        if (!userDoc.exists || !userDoc.data().nomor_wa) {
+            return console.log(`Notifikasi gagal: Pengguna ${pondData.id_pengguna} tidak ditemukan atau tidak memiliki nomor WA.`);
         }
         const userWhatsappNumber = userDoc.data().nomor_wa;
 
@@ -143,8 +146,6 @@ wss.on('connection', (ws) => {
           break;
         
         case 'feed_notification':
-            // --- PERUBAHAN DI SINI ---
-            // Panggil fungsi untuk mengirim notifikasi WA
             triggerWhatsAppNotification(data);
             break;
 
